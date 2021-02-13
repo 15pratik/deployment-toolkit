@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.example</groupId>
+  <artifactId>devops-toolkit</artifactId>
+  <version>${revision}</version>
+
+  <properties>
+    <revision>1.0-SNAPSHOT</revision>
+    <exec.plugin.version>1.6.0</exec.plugin.version>
+    <docker.repository>calc</docker.repository>
+    <docker.username>15pratik</docker.username>
+    <docker.password>f699951a-b076-4f8c-aa3e-148214c90281</docker.password>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <!-- run pytest -->
+          <execution>
+            <id>pytest</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>pytest</executable>
+              <workingDirectory>${project.basedir}</workingDirectory>
+            </configuration>
+          </execution>
+
+          <!-- delete existing docker image -->
+          <execution>
+            <id>docker-clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>docker</executable>
+              <workingDirectory>${project.basedir}</workingDirectory>
+              <arguments>
+                <argument>rmi</argument>
+                <argument>${docker.username}/${docker.repository}:${revision}</argument>
+              </arguments>
+              <successCodes>
+                <successCode>0</successCode>
+                <successCode>1</successCode>
+              </successCodes>
+            </configuration>
+          </execution>
+
+          <!-- create docker image using the Dockerfile in the root directory -->
+          <execution>
+            <id>docker-build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>docker</executable>
+              <workingDirectory>${project.basedir}</workingDirectory>
+              <arguments>
+                <argument>build</argument>
+                <argument>-t</argument>
+                <argument>${docker.username}/${docker.repository}:${revision}</argument>
+                <argument>.</argument>
+              </arguments>
+            </configuration>
+          </execution>
+
+          <!-- login to docker -->
+          <execution>
+            <id>docker-login</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>docker</executable>
+              <workingDirectory>${project.basedir}</workingDirectory>
+              <arguments>
+                <argument>login</argument>
+                <argument>-u</argument>
+                <argument>${docker.username}</argument>
+                <argument>-p</argument>
+                <argument>${docker.password}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+
+          <!-- push the docker image to docker repository -->
+          <execution>
+            <id>docker-push</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>docker</executable>
+              <workingDirectory>${project.basedir}</workingDirectory>
+              <arguments>
+                <argument>push</argument>
+                <argument>${docker.username}/${docker.repository}:${revision}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>${exec.plugin.version}</version>
+    </dependency>
+  </dependencies>
+</project>
